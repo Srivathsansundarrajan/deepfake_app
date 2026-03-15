@@ -14,9 +14,16 @@ IMAGENET_STD  = torch.tensor([0.229, 0.224, 0.225], dtype=torch.float32).view(3,
 # ================= FACE DETECTOR =================
 class FastFaceDetector:
     def __init__(self):
-        self.app = FaceAnalysis(
-            name="buffalo_l"
-        )
+        try:
+            self.app = FaceAnalysis(
+                name="buffalo_l",
+                providers=["CPUExecutionProvider"]
+            )
+        except TypeError:
+            # Fallback for older versions like 0.2.1 on local machine
+            self.app = FaceAnalysis(
+                name="buffalo_l"
+            )
         self.app.prepare(ctx_id=-1, det_size=(640, 640))
 
         # CPU warm-up (prevents first-video lag)
