@@ -13,27 +13,29 @@ IMAGENET_STD  = torch.tensor([0.229, 0.224, 0.225], dtype=torch.float32).view(3,
 
 # ================= FACE DETECTOR =================
 import os
+import gdown
 import zipfile
-import urllib.request
 
-def ensure_insightface_models():
-    root = os.path.expanduser("~/.insightface/models")
-    model_dir = os.path.join(root, "buffalo_l")
-    onnx_path = os.path.join(model_dir, "det_10g.onnx")
-    
-    if not os.path.exists(onnx_path):
+def download_insightface_model():
+    model_dir = os.path.expanduser("~/.insightface/models/buffalo_l")
+
+    if not os.path.exists(model_dir):
         os.makedirs(model_dir, exist_ok=True)
-        print("Downloading InsightFace buffalo_l models...")
-        zip_path = os.path.join(root, "buffalo_l.zip")
-        urllib.request.urlretrieve("https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip", zip_path)
-        
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(root) # Extract into models dir (creates buffalo_l folder automatically)
-            
-        if os.path.exists(zip_path):
-            os.remove(zip_path)
 
-ensure_insightface_models()
+        print("Downloading InsightFace buffalo_l models...")
+
+        url = "https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip"
+        output = "buffalo_l.zip"
+
+        gdown.download(url, output, quiet=False)
+
+        with zipfile.ZipFile(output, "r") as zip_ref:
+            zip_ref.extractall(os.path.expanduser("~/.insightface/models/"))
+
+        if os.path.exists(output):
+            os.remove(output)
+
+download_insightface_model()
 
 class FastFaceDetector:
     def __init__(self):
