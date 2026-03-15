@@ -30,7 +30,7 @@ def download_insightface_model():
         gdown.download(url, output, quiet=False)
 
         with zipfile.ZipFile(output, "r") as zip_ref:
-            zip_ref.extractall(os.path.expanduser("~/.insightface/models/"))
+            zip_ref.extractall(model_dir)
 
         if os.path.exists(output):
             os.remove(output)
