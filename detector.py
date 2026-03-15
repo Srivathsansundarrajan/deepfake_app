@@ -28,34 +28,19 @@ for model_name, file_id in GDRIVE_IDS.items():
         gdown.download(url, model_path, quiet=False)
 
 
-# =====================================================
-# LOAD MODEL 1 (Experiment 1: ImageNet)
-# =====================================================
-model1 = Phase2Model(mode="imagenet", phase1_ckpt=None, freeze_backbone=False)
+import gc
 
-if os.path.exists("models/exp1.pth"):
-    ckpt1 = torch.load("models/exp1.pth", map_location=DEVICE, weights_only=False)
-    model1.load_state_dict(ckpt1["model"] if "model" in ckpt1 else ckpt1, strict=False)
-else:
-    print("⚠️ models/exp1.pth not found. Using untrained Exp1 model.")
-
-model1.to(DEVICE)
-model1.eval()
-
-# =====================================================
-# LOAD MODEL 2 (Experiment 3: Phase1 Finetuned)
-# =====================================================
-model2 = Phase2Model(mode="phase1", phase1_ckpt=None, freeze_backbone=False)
-
-if os.path.exists("models/best.pth"):
-    ckpt2 = torch.load("models/best.pth", map_location=DEVICE, weights_only=False)
-    model2.load_state_dict(ckpt2["model"] if "model" in ckpt2 else ckpt2, strict=False)
-else:
-    print("⚠️ models/best.pth not found. Using untrained Exp3 model.")
-
-model2.to(DEVICE)
-model2.eval()
-
+def load_model(ckpt_name, mode):
+    model = Phase2Model(mode=mode, phase1_ckpt=None, freeze_backbone=False)
+    model_path = f"models/{ckpt_name}"
+    if os.path.exists(model_path):
+        ckpt = torch.load(model_path, map_location=DEVICE, weights_only=False)
+        model.load_state_dict(ckpt["model"] if "model" in ckpt else ckpt, strict=False)
+    else:
+        print(f"⚠️ {model_path} not found. Using untrained {mode} model.")
+    model.to(DEVICE)
+    model.eval()
+    return model
 
 # =====================================================
 # RUN INFERENCE (CALLED BY STREAMLIT)
@@ -63,25 +48,36 @@ model2.eval()
 def run_inference(video_path):
 
     # -------- preprocessing --------
+    # Runs the InsightFace models (uses ~300MB RAM) via @st.cache_resource
     rgb, dct, mask, frames = preprocess_video(video_path)
 
     rgb = rgb.to(DEVICE)
     dct = dct.to(DEVICE)
     mask = mask.to(DEVICE)
 
+    # We load PyTorch models sequentially to prevent Streamlit Cloud Out-Of-Memory (OOM) crashes!
+    # A single model takes ~260MB. Loading both concurrently alongside InsightFace pushes past the 1GB limit.
     with torch.no_grad():
+        # -------- Model 1 --------
+        model1 = load_model("exp1.pth", "imagenet")
         out1 = model1(rgb, dct, mask)
         prob1 = torch.softmax(out1, dim=1)
+        pred1 = prob1.argmax(1).item()
+        conf1 = prob1.max().item() * 100
         
+        # Free memory immediately before loading the second model!
+        del model1
+        gc.collect()
+        
+        # -------- Model 2 --------
+        model2 = load_model("best.pth", "phase1")
         out2 = model2(rgb, dct, mask)
         prob2 = torch.softmax(out2, dim=1)
-
-    # predictions
-    pred1 = prob1.argmax(1).item()
-    conf1 = prob1.max().item() * 100
-    
-    pred2 = prob2.argmax(1).item()
-    conf2 = prob2.max().item() * 100
+        pred2 = prob2.argmax(1).item()
+        conf2 = prob2.max().item() * 100
+        
+        del model2
+        gc.collect()
 
     labels = ["REAL", "FAKE"]
 

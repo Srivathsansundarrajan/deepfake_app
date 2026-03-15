@@ -65,8 +65,11 @@ class FastFaceDetector:
             })
         return dets
 
-# Global instance to avoid reloading the model on every inference
-detector = FastFaceDetector()
+import streamlit as st
+
+@st.cache_resource
+def get_face_detector():
+    return FastFaceDetector()
 
 # ============================
 # Fast block DCT
@@ -109,6 +112,7 @@ def extract_faces(video_path, T=16):
         if not ret:
             continue
 
+        detector = get_face_detector()
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         dets = detector.detect(rgb)
 
