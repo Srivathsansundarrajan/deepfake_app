@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+
+models/
+*.pth
+*.pt
+
+dataset/
+data/
+videos/
+images/
