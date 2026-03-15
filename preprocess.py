@@ -12,6 +12,29 @@ IMAGENET_MEAN = torch.tensor([0.485, 0.456, 0.406], dtype=torch.float32).view(3,
 IMAGENET_STD  = torch.tensor([0.229, 0.224, 0.225], dtype=torch.float32).view(3,1,1)
 
 # ================= FACE DETECTOR =================
+import os
+import zipfile
+import urllib.request
+
+def ensure_insightface_models():
+    root = os.path.expanduser("~/.insightface/models")
+    model_dir = os.path.join(root, "buffalo_l")
+    onnx_path = os.path.join(model_dir, "det_10g.onnx")
+    
+    if not os.path.exists(onnx_path):
+        os.makedirs(model_dir, exist_ok=True)
+        print("Downloading InsightFace buffalo_l models...")
+        zip_path = os.path.join(root, "buffalo_l.zip")
+        urllib.request.urlretrieve("https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip", zip_path)
+        
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(root) # Extract into models dir (creates buffalo_l folder automatically)
+            
+        if os.path.exists(zip_path):
+            os.remove(zip_path)
+
+ensure_insightface_models()
+
 class FastFaceDetector:
     def __init__(self):
         try:
