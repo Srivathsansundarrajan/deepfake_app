@@ -49,7 +49,7 @@ if uploaded_video:
         # --- Display DCT Frames ---
         dct_frames = result.get("dct_frames", [])
         if dct_frames:
-            st.markdown("###DCT Frequency Heatmaps")
+            st.markdown("###  DCT Frequency Heatmaps")
             with st.expander("View DCT Frequency Frames"):
                 st.caption("These show the frequency-domain (DCT) representation of each face frame using an INFERNO colormap. Deepfake artifacts are often most visible in this view.")
                 cols = st.columns(4)
