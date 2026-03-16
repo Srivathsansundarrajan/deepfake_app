@@ -145,6 +145,7 @@ def preprocess_video(video_path):
     rgb_tensor = torch.zeros(C.SEQ_LEN, 3, C.IMG_SIZE, C.IMG_SIZE)
     dct_tensor = torch.zeros(C.SEQ_LEN, 1, C.IMG_SIZE, C.IMG_SIZE)
     mask = torch.zeros(C.SEQ_LEN, dtype=torch.bool)
+    dct_frames = []  # Displayable DCT images (uint8, RGB)
 
     for i, frame in enumerate(frames):
         # ===== RGB =====
@@ -156,6 +157,16 @@ def preprocess_video(video_path):
         dct_map = extract_dct_y(frame)
         dct_tensor[i].copy_(torch.from_numpy(dct_map)).unsqueeze_(0)
 
+        # ===== DCT Visualization =====
+        # Normalize the DCT map to 0-255 for display
+        dct_vis = dct_map.copy()
+        dct_vis -= dct_vis.min()
+        dct_vis /= (dct_vis.max() + 1e-6)
+        dct_vis = (dct_vis * 255).astype(np.uint8)
+        # Apply INFERNO colormap to make it visually meaningful (BGR -> RGB)
+        dct_color = cv2.applyColorMap(dct_vis, cv2.COLORMAP_INFERNO)
+        dct_frames.append(cv2.cvtColor(dct_color, cv2.COLOR_BGR2RGB))
+
         mask[i] = True
 
     # Expected shape by model: (Batch, Seq_len, ...)
@@ -164,4 +175,4 @@ def preprocess_video(video_path):
     dct_tensor = dct_tensor.unsqueeze(0)
     mask = mask.unsqueeze(0)
 
-    return rgb_tensor, dct_tensor, mask, frames
+    return rgb_tensor, dct_tensor, mask, frames, dct_frames

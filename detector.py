@@ -49,7 +49,7 @@ def run_inference(video_path):
 
     # -------- preprocessing --------
     # Runs the InsightFace models (uses ~300MB RAM) via @st.cache_resource
-    rgb, dct, mask, frames = preprocess_video(video_path)
+    rgb, dct, mask, frames, dct_frames = preprocess_video(video_path)
 
     rgb = rgb.to(DEVICE)
     dct = dct.to(DEVICE)
@@ -92,5 +92,6 @@ def run_inference(video_path):
         },
         "label": labels[pred2],        # main display (using Exp3 as primary)
         "confidence": conf2,
-        "frames": frames               # pass raw frames back to app.py
+        "frames": frames,              # pass raw RGB frames back to app.py
+        "dct_frames": dct_frames       # pass DCT visualization frames back to app.py
     }

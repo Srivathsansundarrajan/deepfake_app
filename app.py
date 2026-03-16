@@ -7,7 +7,7 @@ from detector import run_inference
 # ------------------ PAGE CONFIG ------------------
 st.set_page_config(
     page_title="Deepfake FaceSwap Detection",
-    page_icon="🧠",
+    page_icon="",
     layout="centered"
 )
 
@@ -37,16 +37,24 @@ if uploaded_video:
 
         st.success("Analysis complete!")
 
-        # --- Display Frames ---
+        # --- Display RGB Frames ---
         frames = result.get("frames", [])
         if frames:
             st.markdown("###  Extracted Face Frames")
             with st.expander("View Face Regions Sequence"):
-                # Display up to 16 frames in a simple grid
                 cols = st.columns(4)
                 for i, frame in enumerate(frames):
-                    # Frames are RGB numpy arrays
                     cols[i % 4].image(frame, use_container_width=True, caption=f"Frame {i+1}")
+
+        # --- Display DCT Frames ---
+        dct_frames = result.get("dct_frames", [])
+        if dct_frames:
+            st.markdown("###DCT Frequency Heatmaps")
+            with st.expander("View DCT Frequency Frames"):
+                st.caption("These show the frequency-domain (DCT) representation of each face frame using an INFERNO colormap. Deepfake artifacts are often most visible in this view.")
+                cols = st.columns(4)
+                for i, dct_frame in enumerate(dct_frames):
+                    cols[i % 4].image(dct_frame, use_container_width=True, caption=f"DCT {i+1}")
         
         # --- Display Predictions ---
         st.markdown("###  Model Predictions")
